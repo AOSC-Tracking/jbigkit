@@ -1,10 +1,10 @@
 # Unix makefile for JBIG-KIT
 
 # Select an ANSI/ISO C compiler here, GNU gcc is recommended
-CC = gcc
+CC ?= gcc
 
 # Options for the compiler: A high optimization level is suggested
-CFLAGS = -O2 -W -Wno-unused-result
+CFLAGS += -W -Wno-unused-result
 # CFLAGS = -O -g -W -Wall -Wno-unused-result -ansi -pedantic # -DDEBUG
 
 export CC CFLAGS
@@ -36,7 +36,7 @@ clean:
 distribution:
 	rm -rf jbigkit-$(VERSION)
 	git archive v$(VERSION) --prefix jbigkit-$(VERSION)/ | tar xvf -
-	make -C jbigkit-$(VERSION)/pbmtools txt
+	$(MAKE) -C jbigkit-$(VERSION)/pbmtools txt
 	tar cvaf jbigkit-$(VERSION).tar.gz jbigkit-$(VERSION)
 
 release:

@@ -1,28 +1,58 @@
 # Unix makefile for the JBIG-KIT library
 
 # Select an ANSI/ISO C compiler here, GNU gcc is recommended
-CC = gcc
+AR ?= ar
+CC ?= gcc
+RANLIB ?= ranlib
 
 # Options for the compiler: A high optimization level is suggested
-CFLAGS = -g -O -W -Wall -ansi -pedantic # --coverage
+CFLAGS += -W -Wall -ansi -pedantic # --coverage
 
-all: libjbig.a libjbig85.a tstcodec tstcodec85
+ifeq ($(shell uname),Darwin)
+	SONAME = dylib
+	LIBDIR ?= /usr/lib
+else
+	SONAME = so
+endif
+
+all: libjbig.$(SONAME) libjbig85.$(SONAME) tstcodec tstcodec85
+
+static: libjbig.a libjbig85.a
 
 tstcodec: tstcodec.o jbig.o jbig_ar.o
-	$(CC) $(CFLAGS) -o tstcodec tstcodec.o jbig.o jbig_ar.o
+	$(CC) $(LDFLAGS) $(CFLAGS) -o tstcodec tstcodec.o jbig.o jbig_ar.o
 
 tstcodec85: tstcodec85.o jbig85.o jbig_ar.o
-	$(CC) $(CFLAGS) -o tstcodec85 tstcodec85.o jbig85.o jbig_ar.o
+	$(CC) $(LDFLAGS) $(CFLAGS) -o tstcodec85 tstcodec85.o jbig85.o jbig_ar.o
 
 libjbig.a: jbig.o jbig_ar.o
 	rm -f libjbig.a
-	ar rc libjbig.a jbig.o jbig_ar.o
-	-ranlib libjbig.a
+	$(AR) rc libjbig.a jbig.o jbig_ar.o
+	-$(RANLIB) libjbig.a
+
+SOBJS = jbig.lo jbig_ar.lo
+
+libjbig.so: $(SOBJS)
+	$(CC) $(CFLAGS) -shared $(LDFLAGS) -o $@ -Wl,-soname -Wl,$@ $(SOBJS)
+
+libjbig.dylib: $(SOBJS)
+	$(CC) $(CFLAGS) -dynamic $(LDFLAGS) -o $@ -dynamiclib -install_name $(LIBDIR)/$@ $(SOBJS)
+
+SOBJS85 = jbig85.lo jbig_ar.lo
+
+libjbig85.so: $(SOBJS85)
+	$(CC) $(CFLAGS) -shared $(LDFLAGS) -o $@ -Wl,-soname -Wl,$@ $(SOBJS85)
+
+libjbig85.dylib: $(SOBJS85)
+	$(CC) $(CFLAGS) -dynamic $(LDFLAGS) -o $@ -dynamiclib -install_name $(LIBDIR)/$@ $(SOBJS85)
+
+%.lo: %.c jbig.h jbig85.h jbig_ar.h
+	$(CC) $(CFLAGS) -fPIC -c $< -o $@
 
 libjbig85.a: jbig85.o jbig_ar.o
 	rm -f libjbig85.a
-	ar rc libjbig85.a jbig85.o jbig_ar.o
-	-ranlib libjbig85.a
+	$(AR) rc libjbig85.a jbig85.o jbig_ar.o
+	-$(RANLIB) libjbig85.a
 
 jbig.o: jbig.c jbig.h jbig_ar.h
 jbig85.o: jbig85.c jbig85.h jbig_ar.h
